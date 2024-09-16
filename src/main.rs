@@ -46,7 +46,11 @@ fn main() {
                 Some(bookmark) => bookmark,
                 None => get_current_dir(),
             };
-            append(&path, bookmark);
+            let mut bookmarks: Vec<String> = Vec::new();
+            read_lines(&path, &mut bookmarks);
+            if !bookmarks.contains(&bookmark) {
+                append(&path, bookmark);
+            }
         }
         Some(Commands::Delete { bookmark }) => {
             let mut bookmarks: Vec<String> = Vec::new();

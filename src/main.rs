@@ -123,7 +123,7 @@ fn select_bookmark(bookmarks: &Vec<String>) -> Option<String> {
         return None;
     }
     let selection = FuzzySelect::new()
-        .with_prompt("select a bookmark")
+        .with_prompt("Select a bookmark (type to filter): ")
         .items(&bookmarks)
         .interact()
         .unwrap();

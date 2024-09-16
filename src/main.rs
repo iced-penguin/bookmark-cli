@@ -1,5 +1,5 @@
 use clap::{Parser, Subcommand};
-use dialoguer::Select;
+use dialoguer::FuzzySelect;
 use std::fs::{File, OpenOptions};
 use std::io::Write;
 use std::io::{BufRead, BufReader};
@@ -99,7 +99,7 @@ fn append(path: &PathBuf, line: String) {
         .append(true)
         .open(path)
         .expect("failed to open source file");
-    writeln!(file, "{}", line).expect("faile to write to file");
+    writeln!(file, "{}", line).expect("failed to write to file");
 }
 
 fn overwrite(path: &PathBuf, lines: &Vec<String>) {
@@ -118,7 +118,7 @@ fn select_bookmark(bookmarks: &Vec<String>) -> Option<String> {
         println!("no bookmarks found");
         return None;
     }
-    let selection = Select::new()
+    let selection = FuzzySelect::new()
         .with_prompt("select a bookmark")
         .items(&bookmarks)
         .interact()

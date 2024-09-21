@@ -23,8 +23,8 @@ enum Commands {
     },
     /// Delete a bookmark
     Delete,
-    /// Find a bookmark
-    Find,
+    /// Search for a bookmark
+    Search,
     /// List bookmarks
     List,
 }
@@ -64,7 +64,7 @@ fn main() {
                 overwrite(&data_path, &bookmarks);
             }
         }
-        Some(Commands::Find) => {
+        Some(Commands::Search) => {
             let mut bookmarks: Vec<String> = Vec::new();
             read_lines(&data_path, &mut bookmarks);
             if let Some(bookmark) = select_bookmark(&bookmarks) {

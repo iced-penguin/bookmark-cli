@@ -1,5 +1,6 @@
 use clap::{Parser, Subcommand};
-use dialoguer::FuzzySelect;
+use console::Emoji;
+use dialoguer::{theme::ColorfulTheme, FuzzySelect};
 use std::fs::{File, OpenOptions};
 use std::io::Write;
 use std::io::{BufRead, BufReader};
@@ -122,9 +123,12 @@ fn select_bookmark(bookmarks: &Vec<String>) -> Option<String> {
         println!("no bookmarks found");
         return None;
     }
-    let selection = FuzzySelect::new()
-        .with_prompt("select a bookmark")
+    let theme = ColorfulTheme::default();
+    let prompt = format!("{} Select a bookmark (type to filter): ", Emoji("🔖", ""));
+    let selection = FuzzySelect::with_theme(&theme)
+        .with_prompt(prompt)
         .items(&bookmarks)
+        .default(0)
         .interact()
         .unwrap();
     bookmarks.get(selection).cloned()

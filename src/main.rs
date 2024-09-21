@@ -128,6 +128,7 @@ fn select_bookmark(bookmarks: &Vec<String>) -> Option<String> {
     let selection = FuzzySelect::with_theme(&theme)
         .with_prompt(prompt)
         .items(&bookmarks)
+        .default(0)
         .interact()
         .unwrap();
     bookmarks.get(selection).cloned()

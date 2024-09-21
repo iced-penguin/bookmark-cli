@@ -18,7 +18,8 @@ struct Cli {
 enum Commands {
     /// Add a bookmark
     Add {
-        /// The bookmark to add
+        /// The bookmark to add (the absolute path of a directory).
+        /// If not specified, the current directory will be registered.
         bookmark: Option<String>,
     },
     /// Delete a bookmark

@@ -22,10 +22,7 @@ enum Commands {
         bookmark: Option<String>,
     },
     /// Delete a bookmark
-    Delete {
-        /// The bookmark to delete
-        bookmark: String,
-    },
+    Delete,
     /// Find a bookmark
     Find,
     /// List bookmarks
@@ -59,11 +56,13 @@ fn main() {
                 append(&data_path, bookmark);
             }
         }
-        Some(Commands::Delete { bookmark }) => {
+        Some(Commands::Delete) => {
             let mut bookmarks: Vec<String> = Vec::new();
             read_lines(&data_path, &mut bookmarks);
-            bookmarks.retain(|x| x != &bookmark);
-            overwrite(&data_path, &bookmarks);
+            if let Some(bookmark) = select_bookmark(&bookmarks) {
+                bookmarks.retain(|x| x != &bookmark);
+                overwrite(&data_path, &bookmarks);
+            }
         }
         Some(Commands::Find) => {
             let mut bookmarks: Vec<String> = Vec::new();

@@ -39,9 +39,9 @@ fn main() {
         eprintln!("HOME is not set");
         std::process::exit(1);
     });
-    let path = PathBuf::from(home_dir).join(".shiori");
-    if !path.exists() {
-        File::create(&path).unwrap_or_else(|_| {
+    let data_path = PathBuf::from(home_dir).join(".shiori");
+    if !data_path.exists() {
+        File::create(&data_path).unwrap_or_else(|_| {
             eprintln!("failed to create file");
             std::process::exit(1);
         });
@@ -54,27 +54,27 @@ fn main() {
                 None => get_current_dir(),
             };
             let mut bookmarks: Vec<String> = Vec::new();
-            read_lines(&path, &mut bookmarks);
+            read_lines(&data_path, &mut bookmarks);
             if !bookmarks.contains(&bookmark) {
-                append(&path, bookmark);
+                append(&data_path, bookmark);
             }
         }
         Some(Commands::Delete { bookmark }) => {
             let mut bookmarks: Vec<String> = Vec::new();
-            read_lines(&path, &mut bookmarks);
+            read_lines(&data_path, &mut bookmarks);
             bookmarks.retain(|x| x != &bookmark);
-            overwrite(&path, &bookmarks);
+            overwrite(&data_path, &bookmarks);
         }
         Some(Commands::Find) => {
             let mut bookmarks: Vec<String> = Vec::new();
-            read_lines(&path, &mut bookmarks);
+            read_lines(&data_path, &mut bookmarks);
             if let Some(bookmark) = select_bookmark(&bookmarks) {
                 println!("{}", bookmark);
             }
         }
         Some(Commands::List) => {
             let mut bookmarks: Vec<String> = Vec::new();
-            read_lines(&path, &mut bookmarks);
+            read_lines(&data_path, &mut bookmarks);
             for bookmark in bookmarks {
                 println!("{}", bookmark);
             }

@@ -1,11 +1,11 @@
+mod bookmark;
 mod interaction;
 
+use bookmark::{BookmarkStorage, FileStorage};
 use clap::{Parser, Subcommand};
 use console::Emoji;
 use interaction::{FuzzySelector, ItemSelector};
-use std::fs::{File, OpenOptions};
-use std::io::Write;
-use std::io::{BufRead, BufReader};
+use std::fs::File;
 use std::path::PathBuf;
 
 #[derive(Parser)]
@@ -39,13 +39,15 @@ fn main() {
         eprintln!("HOME is not set");
         std::process::exit(1);
     });
-    let data_path = PathBuf::from(home_dir).join(".shiori");
-    if !data_path.exists() {
-        File::create(&data_path).unwrap_or_else(|_| {
+    let src_filename = ".shiori";
+    let src = PathBuf::from(home_dir).join(src_filename);
+    if !src.exists() {
+        File::create(&src).unwrap_or_else(|_| {
             eprintln!("failed to create file");
             std::process::exit(1);
         });
     }
+    let mut bookmark_storage = BookmarkStorage::new(FileStorage::new(src));
 
     match cli.command {
         Some(Commands::Add { bookmark }) => {
@@ -53,30 +55,41 @@ fn main() {
                 Some(bookmark) => bookmark,
                 None => get_current_dir(),
             };
-            let mut bookmarks: Vec<String> = Vec::new();
-            read_lines(&data_path, &mut bookmarks);
-            if !bookmarks.contains(&bookmark) {
-                append(&data_path, bookmark);
-            }
+            bookmark_storage.add(bookmark).unwrap_or_else(|e| {
+                eprintln!("failed to add bookmark: {}", e);
+                std::process::exit(1);
+            });
         }
         Some(Commands::Delete) => {
             let mut bookmarks: Vec<String> = Vec::new();
-            read_lines(&data_path, &mut bookmarks);
+            bookmark_storage.list(&mut bookmarks).unwrap_or_else(|e| {
+                eprintln!("failed to list bookmarks: {}", e);
+                std::process::exit(1);
+            });
             if let Some(bookmark) = select_bookmark(&bookmarks) {
                 bookmarks.retain(|x| x != &bookmark);
-                overwrite(&data_path, &bookmarks);
+                bookmark_storage.delete(bookmark).unwrap_or_else(|e| {
+                    eprintln!("failed to delete bookmark: {}", e);
+                    std::process::exit(1);
+                })
             }
         }
         Some(Commands::Search) => {
             let mut bookmarks: Vec<String> = Vec::new();
-            read_lines(&data_path, &mut bookmarks);
+            bookmark_storage.list(&mut bookmarks).unwrap_or_else(|e| {
+                eprintln!("failed to list bookmarks: {}", e);
+                std::process::exit(1);
+            });
             if let Some(bookmark) = select_bookmark(&bookmarks) {
                 println!("{}", bookmark);
             }
         }
         Some(Commands::List) => {
             let mut bookmarks: Vec<String> = Vec::new();
-            read_lines(&data_path, &mut bookmarks);
+            bookmark_storage.list(&mut bookmarks).unwrap_or_else(|e| {
+                eprintln!("failed to list bookmarks: {}", e);
+                std::process::exit(1);
+            });
             for bookmark in bookmarks {
                 println!("{}", bookmark);
             }
@@ -93,55 +106,6 @@ fn get_current_dir() -> String {
         })
         .to_string_lossy()
         .into_owned()
-}
-
-fn read_lines(path: &PathBuf, lines: &mut Vec<String>) {
-    let file = OpenOptions::new()
-        .read(true)
-        .open(&path)
-        .unwrap_or_else(|_| {
-            eprintln!("failed to open file");
-            std::process::exit(1);
-        });
-    let reader = BufReader::new(file);
-
-    for line in reader.lines() {
-        match line {
-            Ok(l) => lines.push(l),
-            Err(e) => eprintln!("{}", e),
-        }
-    }
-}
-
-fn append(path: &PathBuf, line: String) {
-    let mut file = OpenOptions::new()
-        .append(true)
-        .open(path)
-        .unwrap_or_else(|_| {
-            eprintln!("failed to open file");
-            std::process::exit(1);
-        });
-    writeln!(file, "{}", line).unwrap_or_else(|_| {
-        eprintln!("failed to write to file");
-        std::process::exit(1);
-    })
-}
-
-fn overwrite(path: &PathBuf, lines: &Vec<String>) {
-    let mut file = OpenOptions::new()
-        .write(true)
-        .truncate(true)
-        .open(&path)
-        .unwrap_or_else(|_| {
-            eprintln!("failed to open file");
-            std::process::exit(1);
-        });
-    for line in lines {
-        writeln!(file, "{}", line).unwrap_or_else(|_| {
-            eprintln!("failed to write to file");
-            std::process::exit(1);
-        })
-    }
 }
 
 fn select_bookmark(bookmarks: &Vec<String>) -> Option<String> {

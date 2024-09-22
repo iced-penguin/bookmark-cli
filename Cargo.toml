@@ -1,6 +1,9 @@
 [package]
 name = "bookmark-cli"
-version = "0.1.0"
+version = "1.0.0"
+authors = ["iced-penguin"]
+description = "Simple bookmark tool"
+license = "MIT"
 edition = "2021"
 
 [[bin]]

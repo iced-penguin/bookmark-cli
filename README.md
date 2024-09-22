@@ -17,13 +17,17 @@ https://github.com/user-attachments/assets/c95b144f-6381-4f43-b243-dc867877548e
 
 ## Installation
 
-To install the tool, build it using the following command:
+```
+cargo install bookmark-cli
+```
+
+Alternatively, you can build from source.
 
 ```
 cargo build --release
 ```
 
-After building, copy the binary (`target/release/bm`) to a directory that is included in your system's PATH. For example, you can copy it to `~/bin`:
+Then copy the generated binary to a directory that is included in your system's PATH. For example, you can copy it to `~/bin`:
 
 ```
 cp target/release/bm ~/bin/
@@ -94,7 +98,7 @@ function cb() {
   if [ -z "$dir" ]; then
     return 1
   fi
-  cd $dir || return 1
+  cd "$dir" || return 1
 }
 ```
 

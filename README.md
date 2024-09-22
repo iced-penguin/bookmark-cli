@@ -86,9 +86,12 @@ You can move to a selected bookmark by combining it with the `cd` command.
 If you are using zsh, you can add a function to your `~/.zshrc`. 
 For example:
 
-```
+```sh
 function cb() {
   local -r dir=$(bm search)
+  if [ -z "$dir" ]; then
+    return 1
+  fi
   cd $dir || return 1
 }
 ```

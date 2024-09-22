@@ -5,6 +5,7 @@ authors = ["iced-penguin"]
 description = "Simple bookmark tool"
 license = "MIT"
 edition = "2021"
+repository = "https://github.com/iced-penguin/bookmark-cli"
 
 [[bin]]
 name = "bm"

@@ -39,7 +39,7 @@ fn main() {
         eprintln!("HOME is not set");
         std::process::exit(1);
     });
-    let src_filename = ".shiori";
+    let src_filename = ".bookmarks";
     let src = PathBuf::from(home_dir).join(src_filename);
     if !src.exists() {
         File::create(&src).unwrap_or_else(|_| {

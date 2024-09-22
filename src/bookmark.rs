@@ -76,7 +76,9 @@ impl<S: Storage> BookmarkStorage<S> {
     }
 
     pub fn list(&mut self, bookmarks: &mut Vec<String>) -> Result<(), std::io::Error> {
-        self.storage.read_lines(bookmarks)
+        self.storage.read_lines(bookmarks)?;
+        bookmarks.sort();
+        Ok(())
     }
 }
 
@@ -144,7 +146,7 @@ mod tests {
     }
 
     #[rstest]
-    #[case(vec!["bookmark1", "bookmark2"], vec!["bookmark1", "bookmark2"])]
+    #[case(vec!["bookmark2", "bookmark1"], vec!["bookmark1", "bookmark2"])] // sorted
     fn test_list(#[case] init_lines: Vec<&str>, #[case] expected_lines: Vec<&str>) {
         let init_lines: Vec<String> = init_lines.iter().map(|s| s.to_string()).collect();
         let expected_lines: Vec<String> = expected_lines.iter().map(|s| s.to_string()).collect();

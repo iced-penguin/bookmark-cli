@@ -9,6 +9,7 @@ Users can add, search, list, and delete bookmarks.
 
 Bookmarks are stored in a hidden file (`~/.bookmarks`).
 
+https://github.com/user-attachments/assets/c95b144f-6381-4f43-b243-dc867877548e
 
 ## Requirements
 
@@ -84,6 +85,7 @@ A prompt will appear for you to select the bookmark you want to delete.
 You can move to a selected bookmark by combining it with the `cd` command.
 
 If you are using zsh, you can add a function to your `~/.zshrc`. 
+
 For example:
 
 ```sh
@@ -95,3 +97,4 @@ function cb() {
   cd $dir || return 1
 }
 ```
+

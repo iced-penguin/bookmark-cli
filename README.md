@@ -9,7 +9,7 @@ Users can add, search, list, and delete bookmarks.
 
 Bookmarks are stored in a hidden file (`~/.bookmarks`).
 
-https://github.com/user-attachments/assets/c95b144f-6381-4f43-b243-dc867877548e
+![demo](https://github.com/user-attachments/assets/c5a5f7ad-ce47-42a9-b5c9-b946c5db06b0)
 
 ## Requirements
 

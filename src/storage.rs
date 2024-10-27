@@ -6,7 +6,7 @@ use std::{
 
 pub trait Storage {
     fn read_lines(&self, lines: &mut Vec<String>) -> Result<(), Error>;
-    fn append(&mut self, line: String) -> Result<(), Error>;
+    fn append(&mut self, line: &String) -> Result<(), Error>;
     fn overwrite(&mut self, lines: &[String]) -> Result<(), Error>;
 }
 
@@ -33,7 +33,7 @@ impl Storage for FileStorage {
         Ok(())
     }
 
-    fn append(&mut self, line: String) -> Result<(), Error> {
+    fn append(&mut self, line: &String) -> Result<(), Error> {
         let mut file = OpenOptions::new().append(true).open(&self.path)?;
         writeln!(file, "{}", line)
     }
@@ -59,19 +59,19 @@ impl<S: Storage> BookmarkStorage<S> {
         Self { storage }
     }
 
-    pub fn add(&mut self, bookmark: String) -> Result<(), Error> {
+    pub fn add(&mut self, bookmark: &String) -> Result<(), Error> {
         let mut bookmarks: Vec<String> = Vec::new();
         self.storage.read_lines(&mut bookmarks)?;
-        if !bookmarks.contains(&bookmark) {
-            self.storage.append(bookmark)?;
+        if !bookmarks.contains(bookmark) {
+            self.storage.append(&bookmark)?;
         }
         Ok(())
     }
 
-    pub fn delete(&mut self, bookmark: String) -> Result<(), Error> {
+    pub fn delete(&mut self, bookmark: &String) -> Result<(), Error> {
         let mut bookmarks: Vec<String> = Vec::new();
         self.storage.read_lines(&mut bookmarks)?;
-        bookmarks.retain(|x| x != &bookmark);
+        bookmarks.retain(|x| x != bookmark);
         self.storage.overwrite(&bookmarks)
     }
 
@@ -97,8 +97,8 @@ mod tests {
             Ok(())
         }
 
-        fn append(&mut self, line: String) -> Result<(), Error> {
-            self.lines.push(line);
+        fn append(&mut self, line: &String) -> Result<(), Error> {
+            self.lines.push(line.clone());
             Ok(())
         }
 
@@ -123,7 +123,7 @@ mod tests {
 
         let mock_storage = MockStorage { lines: init_lines };
         let mut bookmark_storage = BookmarkStorage::new(mock_storage);
-        bookmark_storage.add(new_line).unwrap();
+        bookmark_storage.add(&new_line).unwrap();
         assert_eq!(bookmark_storage.storage.lines, expected_lines);
     }
 
@@ -141,7 +141,7 @@ mod tests {
 
         let mock_storage = MockStorage { lines: init_lines };
         let mut bookmark_storage = BookmarkStorage::new(mock_storage);
-        bookmark_storage.delete(line_to_delete).unwrap();
+        bookmark_storage.delete(&line_to_delete).unwrap();
         assert_eq!(bookmark_storage.storage.lines, expected_lines);
     }
 

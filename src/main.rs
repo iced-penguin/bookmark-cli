@@ -30,6 +30,8 @@ enum Commands {
     Search,
     /// List bookmarks
     List,
+    /// Remove all broken bookmarks
+    Prune,
 }
 
 fn main() {
@@ -55,7 +57,7 @@ fn main() {
                 Some(bookmark) => bookmark,
                 None => get_current_dir(),
             };
-            bookmark_storage.add(bookmark).unwrap_or_else(|e| {
+            bookmark_storage.add(&bookmark).unwrap_or_else(|e| {
                 eprintln!("failed to add bookmark: {}", e);
                 std::process::exit(1);
             });
@@ -68,7 +70,7 @@ fn main() {
             });
             if let Some(bookmark) = select_bookmark(&bookmarks) {
                 bookmarks.retain(|x| x != &bookmark);
-                bookmark_storage.delete(bookmark).unwrap_or_else(|e| {
+                bookmark_storage.delete(&bookmark).unwrap_or_else(|e| {
                     eprintln!("failed to delete bookmark: {}", e);
                     std::process::exit(1);
                 })
@@ -92,6 +94,27 @@ fn main() {
             });
             for bookmark in bookmarks {
                 println!("{}", bookmark);
+            }
+        }
+        Some(Commands::Prune) => {
+            let mut bookmarks: Vec<String> = Vec::new();
+            bookmark_storage.list(&mut bookmarks).unwrap_or_else(|e| {
+                eprintln!("failed to list bookmarks: {}", e);
+                std::process::exit(1);
+            });
+
+            for bookmark in bookmarks {
+                let exists = std::fs::exists(&bookmark).unwrap_or_else(|e| {
+                    eprintln!("failed to check bookmark: {}", e);
+                    std::process::exit(1);
+                });
+                if !exists {
+                    bookmark_storage.delete(&bookmark).unwrap_or_else(|e| {
+                        eprintln!("failed to delete bookmark: {}", e);
+                        std::process::exit(1);
+                    });
+                    println!("deleted: {}", bookmark)
+                }
             }
         }
         None => {}

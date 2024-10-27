@@ -1,13 +1,13 @@
 use std::{
     fs::OpenOptions,
-    io::{BufRead, BufReader, Write},
+    io::{BufRead, BufReader, Error, Write},
     path::PathBuf,
 };
 
 pub trait Storage {
-    fn read_lines(&self, lines: &mut Vec<String>) -> Result<(), std::io::Error>;
-    fn append(&mut self, line: String) -> Result<(), std::io::Error>;
-    fn overwrite(&mut self, lines: &[String]) -> Result<(), std::io::Error>;
+    fn read_lines(&self, lines: &mut Vec<String>) -> Result<(), Error>;
+    fn append(&mut self, line: String) -> Result<(), Error>;
+    fn overwrite(&mut self, lines: &[String]) -> Result<(), Error>;
 }
 
 pub struct FileStorage {
@@ -21,7 +21,7 @@ impl FileStorage {
 }
 
 impl Storage for FileStorage {
-    fn read_lines(&self, lines: &mut Vec<String>) -> Result<(), std::io::Error> {
+    fn read_lines(&self, lines: &mut Vec<String>) -> Result<(), Error> {
         let file = OpenOptions::new().read(true).open(&self.path)?;
         let reader = BufReader::new(file);
         for line in reader.lines() {
@@ -33,12 +33,12 @@ impl Storage for FileStorage {
         Ok(())
     }
 
-    fn append(&mut self, line: String) -> Result<(), std::io::Error> {
+    fn append(&mut self, line: String) -> Result<(), Error> {
         let mut file = OpenOptions::new().append(true).open(&self.path)?;
         writeln!(file, "{}", line)
     }
 
-    fn overwrite(&mut self, lines: &[String]) -> Result<(), std::io::Error> {
+    fn overwrite(&mut self, lines: &[String]) -> Result<(), Error> {
         let mut file = OpenOptions::new()
             .write(true)
             .truncate(true)
@@ -59,7 +59,7 @@ impl<S: Storage> BookmarkStorage<S> {
         Self { storage }
     }
 
-    pub fn add(&mut self, bookmark: String) -> Result<(), std::io::Error> {
+    pub fn add(&mut self, bookmark: String) -> Result<(), Error> {
         let mut bookmarks: Vec<String> = Vec::new();
         self.storage.read_lines(&mut bookmarks)?;
         if !bookmarks.contains(&bookmark) {
@@ -68,14 +68,14 @@ impl<S: Storage> BookmarkStorage<S> {
         Ok(())
     }
 
-    pub fn delete(&mut self, bookmark: String) -> Result<(), std::io::Error> {
+    pub fn delete(&mut self, bookmark: String) -> Result<(), Error> {
         let mut bookmarks: Vec<String> = Vec::new();
         self.storage.read_lines(&mut bookmarks)?;
         bookmarks.retain(|x| x != &bookmark);
         self.storage.overwrite(&bookmarks)
     }
 
-    pub fn list(&mut self, bookmarks: &mut Vec<String>) -> Result<(), std::io::Error> {
+    pub fn list(&mut self, bookmarks: &mut Vec<String>) -> Result<(), Error> {
         self.storage.read_lines(bookmarks)?;
         bookmarks.sort();
         Ok(())
@@ -92,17 +92,17 @@ mod tests {
     }
 
     impl Storage for MockStorage {
-        fn read_lines(&self, lines: &mut Vec<String>) -> Result<(), std::io::Error> {
+        fn read_lines(&self, lines: &mut Vec<String>) -> Result<(), Error> {
             lines.extend(self.lines.iter().cloned());
             Ok(())
         }
 
-        fn append(&mut self, line: String) -> Result<(), std::io::Error> {
+        fn append(&mut self, line: String) -> Result<(), Error> {
             self.lines.push(line);
             Ok(())
         }
 
-        fn overwrite(&mut self, lines: &[String]) -> Result<(), std::io::Error> {
+        fn overwrite(&mut self, lines: &[String]) -> Result<(), Error> {
             self.lines.clear();
             self.lines.extend(lines.iter().cloned());
             Ok(())

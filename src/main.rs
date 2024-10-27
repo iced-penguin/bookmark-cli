@@ -1,12 +1,12 @@
-mod bookmark;
 mod interaction;
+mod storage;
 
-use bookmark::{BookmarkStorage, FileStorage};
 use clap::{Parser, Subcommand};
 use console::Emoji;
 use interaction::{FuzzySelector, ItemSelector};
 use std::fs::File;
 use std::path::PathBuf;
+use storage::{BookmarkStorage, FileStorage};
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]

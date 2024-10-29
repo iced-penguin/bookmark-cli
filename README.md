@@ -84,6 +84,14 @@ bm delete
 
 A prompt will appear for you to select the bookmark you want to delete.
 
+### Deleting Broken Bookmarks
+
+```
+bm prune
+```
+
+All broken bookmarks, i.e. bookmarks that no longer exist, will be deleted.
+
 ## Moving to a Bookmark
 
 You can move to a selected bookmark by combining it with the `cd` command.

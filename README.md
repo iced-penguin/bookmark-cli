@@ -21,25 +21,6 @@ Bookmarks are stored in a hidden file (`~/.bookmarks`).
 cargo install bookmark-cli
 ```
 
-Alternatively, you can build from source.
-
-```
-cargo build --release
-```
-
-Then copy the generated binary to a directory that is included in your system's PATH. For example, you can copy it to `~/bin`:
-
-```
-cp target/release/bm ~/bin/
-```
-
-If `~/bin` is not in your PATH, you can add it by running:
-
-```
-echo 'export PATH="$HOME/bin:$PATH"' >> ~/.zshrc
-source ~/.zshrc
-```
-
 ## Usage
 
 | Command | Description |

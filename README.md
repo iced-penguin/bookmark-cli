@@ -48,6 +48,7 @@ source ~/.zshrc
 | delete | Delete a bookmark |
 | search | Search for a bookmark |
 | list | List bookmarks |
+| prune| Delete all broken bookmarks |
 | help | Print this message or the help of the given subcommand(s) |
 
 ### Adding a Bookmark

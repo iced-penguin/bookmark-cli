@@ -6,7 +6,7 @@ use console::Emoji;
 use interaction::{FuzzySelector, ItemSelector};
 use std::fs::File;
 use std::path::PathBuf;
-use storage::{BookmarkStorage, FileStorage};
+use storage::{BookmarkRepository, FileStorage};
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -49,7 +49,7 @@ fn main() {
             std::process::exit(1);
         });
     }
-    let mut bookmark_storage = BookmarkStorage::new(FileStorage::new(src));
+    let mut bookmark_repo = BookmarkRepository::new(FileStorage::new(src));
 
     match cli.command {
         Some(Commands::Add { bookmark }) => {
@@ -57,20 +57,20 @@ fn main() {
                 Some(bookmark) => bookmark,
                 None => get_current_dir(),
             };
-            bookmark_storage.add(&bookmark).unwrap_or_else(|e| {
+            bookmark_repo.add(&bookmark).unwrap_or_else(|e| {
                 eprintln!("failed to add bookmark: {}", e);
                 std::process::exit(1);
             });
         }
         Some(Commands::Delete) => {
             let mut bookmarks: Vec<String> = Vec::new();
-            bookmark_storage.list(&mut bookmarks).unwrap_or_else(|e| {
+            bookmark_repo.list(&mut bookmarks).unwrap_or_else(|e| {
                 eprintln!("failed to list bookmarks: {}", e);
                 std::process::exit(1);
             });
             if let Some(bookmark) = select_bookmark(&bookmarks) {
                 bookmarks.retain(|x| x != &bookmark);
-                bookmark_storage.delete(&bookmark).unwrap_or_else(|e| {
+                bookmark_repo.delete(&bookmark).unwrap_or_else(|e| {
                     eprintln!("failed to delete bookmark: {}", e);
                     std::process::exit(1);
                 })
@@ -78,7 +78,7 @@ fn main() {
         }
         Some(Commands::Search) => {
             let mut bookmarks: Vec<String> = Vec::new();
-            bookmark_storage.list(&mut bookmarks).unwrap_or_else(|e| {
+            bookmark_repo.list(&mut bookmarks).unwrap_or_else(|e| {
                 eprintln!("failed to list bookmarks: {}", e);
                 std::process::exit(1);
             });
@@ -88,7 +88,7 @@ fn main() {
         }
         Some(Commands::List) => {
             let mut bookmarks: Vec<String> = Vec::new();
-            bookmark_storage.list(&mut bookmarks).unwrap_or_else(|e| {
+            bookmark_repo.list(&mut bookmarks).unwrap_or_else(|e| {
                 eprintln!("failed to list bookmarks: {}", e);
                 std::process::exit(1);
             });
@@ -98,7 +98,7 @@ fn main() {
         }
         Some(Commands::Prune) => {
             let mut bookmarks: Vec<String> = Vec::new();
-            bookmark_storage.list(&mut bookmarks).unwrap_or_else(|e| {
+            bookmark_repo.list(&mut bookmarks).unwrap_or_else(|e| {
                 eprintln!("failed to list bookmarks: {}", e);
                 std::process::exit(1);
             });
@@ -109,7 +109,7 @@ fn main() {
                     std::process::exit(1);
                 });
                 if !exists {
-                    bookmark_storage.delete(&bookmark).unwrap_or_else(|e| {
+                    bookmark_repo.delete(&bookmark).unwrap_or_else(|e| {
                         eprintln!("failed to delete bookmark: {}", e);
                         std::process::exit(1);
                     });

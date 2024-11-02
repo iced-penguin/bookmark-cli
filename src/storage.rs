@@ -50,11 +50,11 @@ impl Storage for FileStorage {
     }
 }
 
-pub struct BookmarkStorage<S: Storage> {
+pub struct BookmarkRepository<S: Storage> {
     storage: S,
 }
 
-impl<S: Storage> BookmarkStorage<S> {
+impl<S: Storage> BookmarkRepository<S> {
     pub fn new(storage: S) -> Self {
         Self { storage }
     }
@@ -122,9 +122,9 @@ mod tests {
         let expected_lines: Vec<String> = expected_lines.iter().map(|s| s.to_string()).collect();
 
         let mock_storage = MockStorage { lines: init_lines };
-        let mut bookmark_storage = BookmarkStorage::new(mock_storage);
-        bookmark_storage.add(&new_line).unwrap();
-        assert_eq!(bookmark_storage.storage.lines, expected_lines);
+        let mut bookmark_repo = BookmarkRepository::new(mock_storage);
+        bookmark_repo.add(&new_line).unwrap();
+        assert_eq!(bookmark_repo.storage.lines, expected_lines);
     }
 
     #[rstest]
@@ -140,9 +140,9 @@ mod tests {
         let expected_lines: Vec<String> = expected_lines.iter().map(|s| s.to_string()).collect();
 
         let mock_storage = MockStorage { lines: init_lines };
-        let mut bookmark_storage = BookmarkStorage::new(mock_storage);
-        bookmark_storage.delete(&line_to_delete).unwrap();
-        assert_eq!(bookmark_storage.storage.lines, expected_lines);
+        let mut bookmark_repo = BookmarkRepository::new(mock_storage);
+        bookmark_repo.delete(&line_to_delete).unwrap();
+        assert_eq!(bookmark_repo.storage.lines, expected_lines);
     }
 
     #[rstest]
@@ -152,9 +152,9 @@ mod tests {
         let expected_lines: Vec<String> = expected_lines.iter().map(|s| s.to_string()).collect();
         let mock_storage = MockStorage { lines: init_lines };
 
-        let mut bookmark_storage = BookmarkStorage::new(mock_storage);
+        let mut bookmark_repo = BookmarkRepository::new(mock_storage);
         let mut bookmarks: Vec<String> = Vec::new();
-        bookmark_storage.list(&mut bookmarks).unwrap();
+        bookmark_repo.list(&mut bookmarks).unwrap();
         assert_eq!(bookmarks, expected_lines);
     }
 }

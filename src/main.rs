@@ -1,9 +1,11 @@
+mod bookmark;
 mod interaction;
 mod storage;
 
+use bookmark::Bookmark;
 use clap::{Parser, Subcommand};
 use console::Emoji;
-use interaction::{FuzzySelector, ItemSelector};
+use interaction::{BookmarkSelector, FuzzySelector};
 use std::fs::File;
 use std::path::PathBuf;
 use storage::{BookmarkRepository, FileStorage};
@@ -22,7 +24,7 @@ enum Commands {
     Add {
         /// The bookmark to add (the absolute path of a directory).
         /// If not specified, the current directory will be registered.
-        bookmark: Option<String>,
+        path: Option<String>,
     },
     /// Delete a bookmark
     Delete,
@@ -52,24 +54,24 @@ fn main() {
     let mut bookmark_repo = BookmarkRepository::new(FileStorage::new(src));
 
     match cli.command {
-        Some(Commands::Add { bookmark }) => {
-            let bookmark = match bookmark {
-                Some(bookmark) => bookmark,
+        Some(Commands::Add { path }) => {
+            let path = match path {
+                Some(path) => path,
                 None => get_current_dir(),
             };
-            bookmark_repo.add(&bookmark).unwrap_or_else(|e| {
+            let bookmark = Bookmark::new(&path);
+            bookmark_repo.add(bookmark).unwrap_or_else(|e| {
                 eprintln!("failed to add bookmark: {}", e);
                 std::process::exit(1);
             });
         }
         Some(Commands::Delete) => {
-            let mut bookmarks: Vec<String> = Vec::new();
+            let mut bookmarks: Vec<Bookmark> = Vec::new();
             bookmark_repo.list(&mut bookmarks).unwrap_or_else(|e| {
                 eprintln!("failed to list bookmarks: {}", e);
                 std::process::exit(1);
             });
             if let Some(bookmark) = select_bookmark(&bookmarks) {
-                bookmarks.retain(|x| x != &bookmark);
                 bookmark_repo.delete(&bookmark).unwrap_or_else(|e| {
                     eprintln!("failed to delete bookmark: {}", e);
                     std::process::exit(1);
@@ -77,7 +79,7 @@ fn main() {
             }
         }
         Some(Commands::Search) => {
-            let mut bookmarks: Vec<String> = Vec::new();
+            let mut bookmarks: Vec<Bookmark> = Vec::new();
             bookmark_repo.list(&mut bookmarks).unwrap_or_else(|e| {
                 eprintln!("failed to list bookmarks: {}", e);
                 std::process::exit(1);
@@ -87,7 +89,7 @@ fn main() {
             }
         }
         Some(Commands::List) => {
-            let mut bookmarks: Vec<String> = Vec::new();
+            let mut bookmarks: Vec<Bookmark> = Vec::new();
             bookmark_repo.list(&mut bookmarks).unwrap_or_else(|e| {
                 eprintln!("failed to list bookmarks: {}", e);
                 std::process::exit(1);
@@ -97,14 +99,14 @@ fn main() {
             }
         }
         Some(Commands::Prune) => {
-            let mut bookmarks: Vec<String> = Vec::new();
+            let mut bookmarks: Vec<Bookmark> = Vec::new();
             bookmark_repo.list(&mut bookmarks).unwrap_or_else(|e| {
                 eprintln!("failed to list bookmarks: {}", e);
                 std::process::exit(1);
             });
 
             for bookmark in bookmarks {
-                let exists = std::fs::exists(&bookmark).unwrap_or_else(|e| {
+                let exists = bookmark.exists().unwrap_or_else(|e| {
                     eprintln!("failed to check bookmark: {}", e);
                     std::process::exit(1);
                 });
@@ -131,8 +133,8 @@ fn get_current_dir() -> String {
         .into_owned()
 }
 
-fn select_bookmark(bookmarks: &Vec<String>) -> Option<String> {
+fn select_bookmark(bookmarks: &Vec<Bookmark>) -> Option<Bookmark> {
     let prompt = format!("{} Select a bookmark (type to filter): ", Emoji("🔖", ""));
-    let bookmark_selector = ItemSelector::new(FuzzySelector::new(prompt));
+    let bookmark_selector = BookmarkSelector::new(FuzzySelector::new(prompt));
     bookmark_selector.select(&bookmarks)
 }

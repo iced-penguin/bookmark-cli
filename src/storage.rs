@@ -1,12 +1,15 @@
 use std::{
+    collections::HashSet,
     fs::OpenOptions,
     io::{BufRead, BufReader, Error, Write},
     path::PathBuf,
 };
 
+use crate::bookmark::Bookmark;
+
+// HACK: Daoという一般的な言い回しを使うべきか. その場合メソッドの見直しも必要
 pub trait Storage {
     fn read_lines(&self, lines: &mut Vec<String>) -> Result<(), Error>;
-    fn append(&mut self, line: &String) -> Result<(), Error>;
     fn overwrite(&mut self, lines: &[String]) -> Result<(), Error>;
 }
 
@@ -33,11 +36,6 @@ impl Storage for FileStorage {
         Ok(())
     }
 
-    fn append(&mut self, line: &String) -> Result<(), Error> {
-        let mut file = OpenOptions::new().append(true).open(&self.path)?;
-        writeln!(file, "{}", line)
-    }
-
     fn overwrite(&mut self, lines: &[String]) -> Result<(), Error> {
         let mut file = OpenOptions::new()
             .write(true)
@@ -59,24 +57,30 @@ impl<S: Storage> BookmarkRepository<S> {
         Self { storage }
     }
 
-    pub fn add(&mut self, bookmark: &String) -> Result<(), Error> {
-        let mut bookmarks: Vec<String> = Vec::new();
-        self.storage.read_lines(&mut bookmarks)?;
-        if !bookmarks.contains(bookmark) {
-            self.storage.append(&bookmark)?;
-        }
-        Ok(())
+    pub fn add(&mut self, bookmark: Bookmark) -> Result<(), Error> {
+        let mut lines: Vec<String> = Vec::new();
+        self.storage.read_lines(&mut lines)?;
+        let mut bookmarks: HashSet<Bookmark> = lines.iter().map(|l| Bookmark::new(l)).collect();
+        bookmarks.insert(bookmark);
+        let new_lines: Vec<String> = bookmarks.iter().map(|b| b.path.clone()).collect();
+        self.storage.overwrite(&new_lines)
     }
 
-    pub fn delete(&mut self, bookmark: &String) -> Result<(), Error> {
-        let mut bookmarks: Vec<String> = Vec::new();
-        self.storage.read_lines(&mut bookmarks)?;
+    pub fn delete(&mut self, bookmark: &Bookmark) -> Result<(), Error> {
+        let mut lines: Vec<String> = Vec::new();
+        self.storage.read_lines(&mut lines)?;
+        let mut bookmarks: HashSet<Bookmark> = lines.iter().map(|l| Bookmark::new(l)).collect();
         bookmarks.retain(|x| x != bookmark);
-        self.storage.overwrite(&bookmarks)
+        let new_lines: Vec<String> = bookmarks.iter().map(|b| b.path.clone()).collect();
+        self.storage.overwrite(&new_lines)
     }
 
-    pub fn list(&mut self, bookmarks: &mut Vec<String>) -> Result<(), Error> {
-        self.storage.read_lines(bookmarks)?;
+    pub fn list(&mut self, bookmarks: &mut Vec<Bookmark>) -> Result<(), Error> {
+        let mut lines: Vec<String> = Vec::new();
+        self.storage.read_lines(&mut lines)?;
+        for line in lines {
+            bookmarks.push(Bookmark::new(&line));
+        }
         bookmarks.sort();
         Ok(())
     }
@@ -97,11 +101,6 @@ mod tests {
             Ok(())
         }
 
-        fn append(&mut self, line: &String) -> Result<(), Error> {
-            self.lines.push(line.clone());
-            Ok(())
-        }
-
         fn overwrite(&mut self, lines: &[String]) -> Result<(), Error> {
             self.lines.clear();
             self.lines.extend(lines.iter().cloned());
@@ -118,13 +117,14 @@ mod tests {
         #[case] expected_lines: Vec<&str>,
     ) {
         let init_lines: Vec<String> = init_lines.iter().map(|s| s.to_string()).collect();
-        let new_line: String = new_line.to_string();
         let expected_lines: Vec<String> = expected_lines.iter().map(|s| s.to_string()).collect();
 
         let mock_storage = MockStorage { lines: init_lines };
         let mut bookmark_repo = BookmarkRepository::new(mock_storage);
-        bookmark_repo.add(&new_line).unwrap();
-        assert_eq!(bookmark_repo.storage.lines, expected_lines);
+        bookmark_repo.add(Bookmark::new(new_line)).unwrap();
+        let mut actual = bookmark_repo.storage.lines;
+        actual.sort();
+        assert_eq!(actual, expected_lines);
     }
 
     #[rstest]
@@ -136,12 +136,14 @@ mod tests {
         #[case] expected_lines: Vec<&str>,
     ) {
         let init_lines: Vec<String> = init_lines.iter().map(|s| s.to_string()).collect();
-        let line_to_delete: String = line_to_delete.to_string();
+        let line_to_delete: &str = line_to_delete;
         let expected_lines: Vec<String> = expected_lines.iter().map(|s| s.to_string()).collect();
 
         let mock_storage = MockStorage { lines: init_lines };
         let mut bookmark_repo = BookmarkRepository::new(mock_storage);
-        bookmark_repo.delete(&line_to_delete).unwrap();
+        bookmark_repo
+            .delete(&Bookmark::new(line_to_delete))
+            .unwrap();
         assert_eq!(bookmark_repo.storage.lines, expected_lines);
     }
 
@@ -153,8 +155,9 @@ mod tests {
         let mock_storage = MockStorage { lines: init_lines };
 
         let mut bookmark_repo = BookmarkRepository::new(mock_storage);
-        let mut bookmarks: Vec<String> = Vec::new();
+        let mut bookmarks: Vec<Bookmark> = Vec::new();
         bookmark_repo.list(&mut bookmarks).unwrap();
-        assert_eq!(bookmarks, expected_lines);
+        let actual: Vec<String> = bookmarks.iter().map(|b| b.path.clone()).collect();
+        assert_eq!(actual, expected_lines);
     }
 }

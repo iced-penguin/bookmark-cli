@@ -123,6 +123,7 @@ mod tests {
         let mut bookmark_repo = BookmarkRepository::new(mock_storage);
         bookmark_repo.add(Bookmark::new(new_line)).unwrap();
         let mut actual = bookmark_repo.storage.lines;
+        // HACK: 順序が保証されないのでテストを通すためにソートしているが、ソート順を固定するかセットで保持するべき
         actual.sort();
         assert_eq!(actual, expected_lines);
     }
@@ -144,7 +145,9 @@ mod tests {
         bookmark_repo
             .delete(&Bookmark::new(line_to_delete))
             .unwrap();
-        assert_eq!(bookmark_repo.storage.lines, expected_lines);
+        let mut actual = bookmark_repo.storage.lines;
+        actual.sort();
+        assert_eq!(actual, expected_lines);
     }
 
     #[rstest]

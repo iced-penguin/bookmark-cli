@@ -12,11 +12,15 @@ impl Bookmark {
         }
     }
 
-    pub fn exists(&self) -> Result<bool, std::io::Error> {
-        std::fs::exists(&self.path)
+    pub fn is_broken(&self) -> Result<bool, std::io::Error> {
+        match std::fs::exists(&self.path) {
+            Ok(exists) => Ok(!exists),
+            Err(e) => Err(e),
+        }
     }
 }
 
+// NOTE: 選択肢の文字列のためにto_stringが実装されるようにする
 impl Display for Bookmark {
     fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
         write!(f, "{}", self.path)
@@ -28,7 +32,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_format() {
+    fn test_to_string() {
         let bookmark = Bookmark::new("path/to/sample");
         assert_eq!(bookmark.to_string(), "path/to/sample");
     }

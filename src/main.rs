@@ -106,11 +106,11 @@ fn main() {
             });
 
             for bookmark in bookmarks {
-                let exists = bookmark.exists().unwrap_or_else(|e| {
+                let is_broken = bookmark.is_broken().unwrap_or_else(|e| {
                     eprintln!("failed to check bookmark: {}", e);
                     std::process::exit(1);
                 });
-                if !exists {
+                if is_broken {
                     bookmark_repo.delete(&bookmark).unwrap_or_else(|e| {
                         eprintln!("failed to delete bookmark: {}", e);
                         std::process::exit(1);

@@ -59,67 +59,87 @@ fn main() {
 
     match cli.command {
         Some(Commands::Add { path }) => {
-            let path = match path {
-                Some(path) => path,
-                None => get_current_dir(),
-            };
-            let bookmark = Bookmark::new(&path);
-            bookmark_repo.save(&bookmark).unwrap_or_else(|e| {
-                eprintln!("failed to add bookmark: {}", e);
-                std::process::exit(1);
-            });
+            add_bookmark(&mut bookmark_repo, path);
         }
         Some(Commands::Delete) => {
-            let bookmarks = bookmark_repo.find_all().unwrap_or_else(|e| {
-                eprintln!("failed to list bookmarks: {}", e);
-                std::process::exit(1);
-            });
-            if let Some(bookmark) = select_bookmark(&bookmarks) {
-                bookmark_repo.delete(&bookmark).unwrap_or_else(|e| {
-                    eprintln!("failed to delete bookmark: {}", e);
-                    std::process::exit(1);
-                })
-            }
+            delete_bookmark(&mut bookmark_repo);
         }
         Some(Commands::Search) => {
-            let bookmarks = bookmark_repo.find_all().unwrap_or_else(|e| {
-                eprintln!("failed to list bookmarks: {}", e);
-                std::process::exit(1);
-            });
-            if let Some(bookmark) = select_bookmark(&bookmarks) {
-                println!("{}", bookmark);
-            }
+            search_bookmark(&mut bookmark_repo);
         }
         Some(Commands::List) => {
-            let bookmarks = bookmark_repo.find_all().unwrap_or_else(|e| {
-                eprintln!("failed to list bookmarks: {}", e);
-                std::process::exit(1);
-            });
-            for bookmark in bookmarks {
-                println!("{}", bookmark);
-            }
+            list_bookmarks(&mut bookmark_repo);
         }
         Some(Commands::Prune) => {
-            let bookmarks = bookmark_repo.find_all().unwrap_or_else(|e| {
-                eprintln!("failed to list bookmarks: {}", e);
-                std::process::exit(1);
-            });
-
-            for bookmark in bookmarks {
-                let is_broken = bookmark.is_broken().unwrap_or_else(|e| {
-                    eprintln!("failed to check bookmark: {}", e);
-                    std::process::exit(1);
-                });
-                if is_broken {
-                    bookmark_repo.delete(&bookmark).unwrap_or_else(|e| {
-                        eprintln!("failed to delete bookmark: {}", e);
-                        std::process::exit(1);
-                    });
-                    println!("deleted: {}", bookmark)
-                }
-            }
+            prune_bookmarks(&mut bookmark_repo);
         }
         None => {}
+    }
+}
+
+fn add_bookmark(bookmark_repo: &mut dyn IBookmarkRepository, path: Option<String>) {
+    let path = match path {
+        Some(path) => path,
+        None => get_current_dir(),
+    };
+    let bookmark = Bookmark::new(&path);
+    bookmark_repo.save(&bookmark).unwrap_or_else(|e| {
+        eprintln!("failed to add bookmark: {}", e);
+        std::process::exit(1);
+    });
+}
+
+fn delete_bookmark(bookmark_repo: &mut dyn IBookmarkRepository) {
+    let bookmarks = bookmark_repo.find_all().unwrap_or_else(|e| {
+        eprintln!("failed to list bookmarks: {}", e);
+        std::process::exit(1);
+    });
+    if let Some(bookmark) = select_bookmark(&bookmarks) {
+        bookmark_repo.delete(&bookmark).unwrap_or_else(|e| {
+            eprintln!("failed to delete bookmark: {}", e);
+            std::process::exit(1);
+        })
+    }
+}
+
+fn search_bookmark(bookmark_repo: &mut dyn IBookmarkRepository) {
+    let bookmarks = bookmark_repo.find_all().unwrap_or_else(|e| {
+        eprintln!("failed to list bookmarks: {}", e);
+        std::process::exit(1);
+    });
+    if let Some(bookmark) = select_bookmark(&bookmarks) {
+        println!("{}", bookmark);
+    }
+}
+
+fn list_bookmarks(bookmark_repo: &mut dyn IBookmarkRepository) {
+    let bookmarks = bookmark_repo.find_all().unwrap_or_else(|e| {
+        eprintln!("failed to list bookmarks: {}", e);
+        std::process::exit(1);
+    });
+    for bookmark in bookmarks {
+        println!("{}", bookmark);
+    }
+}
+
+fn prune_bookmarks(bookmark_repo: &mut dyn IBookmarkRepository) {
+    let bookmarks = bookmark_repo.find_all().unwrap_or_else(|e| {
+        eprintln!("failed to list bookmarks: {}", e);
+        std::process::exit(1);
+    });
+
+    for bookmark in bookmarks {
+        let is_broken = bookmark.is_broken().unwrap_or_else(|e| {
+            eprintln!("failed to check bookmark: {}", e);
+            std::process::exit(1);
+        });
+        if is_broken {
+            bookmark_repo.delete(&bookmark).unwrap_or_else(|e| {
+                eprintln!("failed to delete bookmark: {}", e);
+                std::process::exit(1);
+            });
+            println!("deleted: {}", bookmark)
+        }
     }
 }
 

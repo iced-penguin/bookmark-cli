@@ -56,11 +56,11 @@ impl IBookmarkDao for BookmarkDao {
     }
 }
 
-// テスト用
 pub struct MockBookmarkDao {
     bookmarks: Vec<Bookmark>,
 }
 
+#[cfg(test)]
 impl MockBookmarkDao {
     pub fn new(bookmarks: &Vec<Bookmark>) -> Self {
         Self {

@@ -1,14 +1,16 @@
 mod bookmark;
+mod dao;
 mod interaction;
-mod storage;
+mod repository;
 
 use bookmark::Bookmark;
 use clap::{Parser, Subcommand};
 use console::Emoji;
+use dao::BookmarkDao;
 use interaction::{BookmarkSelector, FuzzySelector};
+use repository::{BookmarkRepository, IBookmarkRepository};
 use std::fs::File;
 use std::path::PathBuf;
-use storage::{BookmarkRepository, FileStorage};
 
 #[derive(Parser)]
 #[command(author, version, about, long_about = None)]
@@ -51,7 +53,9 @@ fn main() {
             std::process::exit(1);
         });
     }
-    let mut bookmark_repo = BookmarkRepository::new(FileStorage::new(src));
+
+    let dao = BookmarkDao::new(src);
+    let mut bookmark_repo = BookmarkRepository::new(dao);
 
     match cli.command {
         Some(Commands::Add { path }) => {
@@ -60,14 +64,13 @@ fn main() {
                 None => get_current_dir(),
             };
             let bookmark = Bookmark::new(&path);
-            bookmark_repo.add(bookmark).unwrap_or_else(|e| {
+            bookmark_repo.save(&bookmark).unwrap_or_else(|e| {
                 eprintln!("failed to add bookmark: {}", e);
                 std::process::exit(1);
             });
         }
         Some(Commands::Delete) => {
-            let mut bookmarks: Vec<Bookmark> = Vec::new();
-            bookmark_repo.list(&mut bookmarks).unwrap_or_else(|e| {
+            let bookmarks = bookmark_repo.find_all().unwrap_or_else(|e| {
                 eprintln!("failed to list bookmarks: {}", e);
                 std::process::exit(1);
             });
@@ -79,8 +82,7 @@ fn main() {
             }
         }
         Some(Commands::Search) => {
-            let mut bookmarks: Vec<Bookmark> = Vec::new();
-            bookmark_repo.list(&mut bookmarks).unwrap_or_else(|e| {
+            let bookmarks = bookmark_repo.find_all().unwrap_or_else(|e| {
                 eprintln!("failed to list bookmarks: {}", e);
                 std::process::exit(1);
             });
@@ -89,8 +91,7 @@ fn main() {
             }
         }
         Some(Commands::List) => {
-            let mut bookmarks: Vec<Bookmark> = Vec::new();
-            bookmark_repo.list(&mut bookmarks).unwrap_or_else(|e| {
+            let bookmarks = bookmark_repo.find_all().unwrap_or_else(|e| {
                 eprintln!("failed to list bookmarks: {}", e);
                 std::process::exit(1);
             });
@@ -99,8 +100,7 @@ fn main() {
             }
         }
         Some(Commands::Prune) => {
-            let mut bookmarks: Vec<Bookmark> = Vec::new();
-            bookmark_repo.list(&mut bookmarks).unwrap_or_else(|e| {
+            let bookmarks = bookmark_repo.find_all().unwrap_or_else(|e| {
                 eprintln!("failed to list bookmarks: {}", e);
                 std::process::exit(1);
             });

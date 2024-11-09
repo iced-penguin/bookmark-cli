@@ -1,4 +1,7 @@
-use std::fmt::{Display, Formatter};
+use std::{
+    fmt::{Display, Formatter},
+    str,
+};
 
 #[derive(PartialEq, Eq, Hash, Ord, PartialOrd, Clone, Debug)]
 pub struct Bookmark {
@@ -18,6 +21,10 @@ impl Bookmark {
             Err(e) => Err(e),
         }
     }
+
+    pub fn parse(s: String) -> Self {
+        Self { path: s }
+    }
 }
 
 // NOTE: 選択肢の文字列のためにto_stringが実装されるようにする
@@ -35,5 +42,12 @@ mod tests {
     fn test_to_string() {
         let bookmark = Bookmark::new("path/to/sample");
         assert_eq!(bookmark.to_string(), "path/to/sample");
+    }
+
+    #[test]
+    fn test_parse() {
+        let path = "path/to/sample".to_string();
+        let bookmark = Bookmark::parse(path.clone());
+        assert_eq!(bookmark.path, path);
     }
 }

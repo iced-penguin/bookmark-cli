@@ -59,6 +59,10 @@ fn main() {
 
     match cli.command {
         Some(Commands::Add { path }) => {
+            let path = match path {
+                Some(path) => path,
+                None => get_current_dir(),
+            };
             add_bookmark(&mut bookmark_repo, path);
         }
         Some(Commands::Delete) => {
@@ -77,12 +81,7 @@ fn main() {
     }
 }
 
-fn add_bookmark(bookmark_repo: &mut dyn IBookmarkRepository, path: Option<String>) {
-    let path = match path {
-        Some(path) => path,
-        None => get_current_dir(),
-    };
-
+fn add_bookmark(bookmark_repo: &mut dyn IBookmarkRepository, path: String) {
     if path.is_empty() {
         eprintln!("Path cannot be empty");
         std::process::exit(1);

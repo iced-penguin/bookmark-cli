@@ -82,6 +82,23 @@ fn add_bookmark(bookmark_repo: &mut dyn IBookmarkRepository, path: Option<String
         Some(path) => path,
         None => get_current_dir(),
     };
+
+    if path.is_empty() {
+        eprintln!("Path cannot be empty");
+        std::process::exit(1);
+    }
+
+    let path_buf = PathBuf::from(&path);
+    if !path_buf.exists() {
+        eprintln!("Path does not exist: {}", path);
+        std::process::exit(1);
+    }
+
+    if !path_buf.is_dir() {
+        eprintln!("Path is not a directory: {}", path);
+        std::process::exit(1);
+    }
+
     let bookmark = Bookmark::new(&path);
     bookmark_repo.save(&bookmark).unwrap_or_else(|e| {
         eprintln!("failed to add bookmark: {}", e);

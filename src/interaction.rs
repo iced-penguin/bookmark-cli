@@ -27,6 +27,10 @@ impl Selector for FuzzySelector {
     }
 }
 
+// pub trait IBookmarkSelector {
+//     fn select(&self, items: &[Bookmark]) -> Option<Bookmark>;
+// }
+
 pub struct BookmarkSelector<S: Selector> {
     selector: S,
 }
@@ -36,15 +40,12 @@ impl<S: Selector> BookmarkSelector<S> {
         Self { selector }
     }
 
-    pub fn select(&self, items: &[Bookmark]) -> Option<Bookmark> {
+    pub fn select(&self, items: &[Bookmark]) -> Result<Option<Bookmark>, Error> {
         if items.is_empty() {
-            return None;
+            return Ok(None);
         }
-        // HACK: エラー処理再考
-        let selection = self.selector.select(items).unwrap_or_else(|_| {
-            std::process::exit(1);
-        });
-        items.get(selection).cloned()
+        let selection = self.selector.select(items)?;
+        Ok(items.get(selection).cloned())
     }
 }
 
@@ -64,7 +65,7 @@ mod tests {
     }
 
     #[rstest]
-    #[case(vec![Bookmark::new("path/to/1"), Bookmark::new( "path/to/2")], 0, Some(Bookmark::new("path/to/1")))]
+    #[case(vec![Bookmark::new("path/to/1"), Bookmark::new("path/to/2")], 0, Some(Bookmark::new("path/to/1")))]
     #[case(vec![], 0, None)] // 空のリストの場合
     fn test_select_item(
         #[case] items: Vec<Bookmark>,
@@ -73,7 +74,7 @@ mod tests {
     ) {
         let mock_selector = MockSelector { selection };
         let item_selector = BookmarkSelector::new(mock_selector);
-        let result = item_selector.select(&items);
+        let result = item_selector.select(&items).unwrap();
         assert_eq!(result, expected);
     }
 }

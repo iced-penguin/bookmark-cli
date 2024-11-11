@@ -6,82 +6,70 @@ use crate::bookmark::Bookmark;
 use crate::interaction::{BookmarkSelector, FuzzySelector};
 use crate::repository::IBookmarkRepository;
 
-pub fn add_bookmark(bookmark_repo: &mut dyn IBookmarkRepository, path: String) {
+pub fn add_bookmark(
+    bookmark_repo: &mut dyn IBookmarkRepository,
+    path: String,
+) -> Result<(), Box<dyn std::error::Error>> {
     if path.is_empty() {
-        eprintln!("Path cannot be empty");
-        std::process::exit(1);
+        return Err("Path cannot be empty".into());
     }
 
     let path_buf = PathBuf::from(&path);
     if !path_buf.exists() {
-        eprintln!("Path does not exist: {}", path);
-        std::process::exit(1);
+        return Err(format!("Path does not exist: {}", path).into());
     }
 
     if !path_buf.is_dir() {
-        eprintln!("Path is not a directory: {}", path);
-        std::process::exit(1);
+        return Err(format!("Path is not a directory: {}", path).into());
     }
 
     let bookmark = Bookmark::new(&path);
-    bookmark_repo.save(&bookmark).unwrap_or_else(|e| {
-        eprintln!("failed to add bookmark: {}", e);
-        std::process::exit(1);
-    });
+    Ok(bookmark_repo.save(&bookmark)?)
 }
 
-pub fn delete_bookmark(bookmark_repo: &mut dyn IBookmarkRepository) {
-    let bookmarks = bookmark_repo.find_all().unwrap_or_else(|e| {
-        eprintln!("failed to list bookmarks: {}", e);
-        std::process::exit(1);
-    });
+pub fn delete_bookmark(
+    bookmark_repo: &mut dyn IBookmarkRepository,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let bookmarks = bookmark_repo.find_all()?;
     if let Some(bookmark) = select_bookmark(&bookmarks) {
-        bookmark_repo.delete(&bookmark).unwrap_or_else(|e| {
-            eprintln!("failed to delete bookmark: {}", e);
-            std::process::exit(1);
-        })
+        bookmark_repo.delete(&bookmark)?;
     }
+    Ok(())
 }
 
-pub fn search_bookmark(bookmark_repo: &mut dyn IBookmarkRepository) {
-    let bookmarks = bookmark_repo.find_all().unwrap_or_else(|e| {
-        eprintln!("failed to list bookmarks: {}", e);
-        std::process::exit(1);
-    });
+pub fn search_bookmark(
+    bookmark_repo: &mut dyn IBookmarkRepository,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let bookmarks = bookmark_repo.find_all()?;
     if let Some(bookmark) = select_bookmark(&bookmarks) {
         println!("{}", bookmark);
     }
+    Ok(())
 }
 
-pub fn list_bookmarks(bookmark_repo: &mut dyn IBookmarkRepository) {
-    let bookmarks = bookmark_repo.find_all().unwrap_or_else(|e| {
-        eprintln!("failed to list bookmarks: {}", e);
-        std::process::exit(1);
-    });
+pub fn list_bookmarks(
+    bookmark_repo: &mut dyn IBookmarkRepository,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let bookmarks = bookmark_repo.find_all()?;
     for bookmark in bookmarks {
         println!("{}", bookmark);
     }
+    Ok(())
 }
 
-pub fn prune_bookmarks(bookmark_repo: &mut dyn IBookmarkRepository) {
-    let bookmarks = bookmark_repo.find_all().unwrap_or_else(|e| {
-        eprintln!("failed to list bookmarks: {}", e);
-        std::process::exit(1);
-    });
+pub fn prune_bookmarks(
+    bookmark_repo: &mut dyn IBookmarkRepository,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let bookmarks = bookmark_repo.find_all()?;
 
     for bookmark in bookmarks {
-        let is_broken = bookmark.is_broken().unwrap_or_else(|e| {
-            eprintln!("failed to check bookmark: {}", e);
-            std::process::exit(1);
-        });
+        let is_broken = bookmark.is_broken()?;
         if is_broken {
-            bookmark_repo.delete(&bookmark).unwrap_or_else(|e| {
-                eprintln!("failed to delete bookmark: {}", e);
-                std::process::exit(1);
-            });
+            bookmark_repo.delete(&bookmark)?;
             println!("deleted: {}", bookmark)
         }
     }
+    Ok(())
 }
 
 fn select_bookmark(bookmarks: &Vec<Bookmark>) -> Option<Bookmark> {

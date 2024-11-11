@@ -56,19 +56,24 @@ fn main() {
     let dao = BookmarkDao::new(src);
     let mut bookmark_repo = BookmarkRepository::new(dao);
 
-    match cli.command {
+    let result: Result<(), Box<dyn std::error::Error>> = match cli.command {
         Some(Commands::Add { path }) => {
             let path = match path {
                 Some(path) => path,
                 None => get_current_dir(),
             };
-            add_bookmark(&mut bookmark_repo, path);
+            add_bookmark(&mut bookmark_repo, path)
         }
         Some(Commands::Delete) => delete_bookmark(&mut bookmark_repo),
         Some(Commands::Search) => search_bookmark(&mut bookmark_repo),
         Some(Commands::List) => list_bookmarks(&mut bookmark_repo),
         Some(Commands::Prune) => prune_bookmarks(&mut bookmark_repo),
-        None => {}
+        None => Ok(()),
+    };
+
+    if let Err(e) = result {
+        eprintln!("{}", e);
+        std::process::exit(1);
     }
 }
 

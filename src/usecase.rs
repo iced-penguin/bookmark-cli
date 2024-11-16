@@ -87,6 +87,7 @@ mod tests {
     use super::*;
     use crate::path::MockPathOps;
     use crate::repository::MockBookmarkRepository;
+    use crate::selector::MockIBookmarkSelector;
     use rstest::rstest;
 
     #[test]
@@ -154,5 +155,35 @@ mod tests {
 
         let result = add_bookmark(&mut repo, &path_ops, path);
         assert!(result.is_err());
+    }
+
+    #[test]
+    // 正常にブックマークが削除されること
+    fn test_delete_bookmark() {
+        let bookmark = Bookmark::new("/path/to/dir");
+
+        let mut repo = MockBookmarkRepository::new(&[bookmark.clone()]);
+        let mut selector = MockIBookmarkSelector::new();
+        selector
+            .expect_select()
+            .returning(|_, _| Ok(Some(Bookmark::new("/path/to/dir"))));
+
+        let result = delete_bookmark(&mut repo, &selector);
+        assert!(result.is_ok());
+        assert!(repo.find_all().unwrap().is_empty());
+    }
+
+    #[test]
+    // 該当するブックマークが存在しない場合は何もせずに正常終了
+    fn test_delete_bookmark_no_match() {
+        let bookmark = Bookmark::new("/path/to/dir");
+
+        let mut repo = MockBookmarkRepository::new(&[bookmark.clone()]);
+        let mut selector = MockIBookmarkSelector::new();
+        selector.expect_select().returning(|_, _| Ok(None));
+
+        let result = delete_bookmark(&mut repo, &selector);
+        assert!(result.is_ok());
+        assert_eq!(repo.find_all().unwrap(), vec![bookmark]);
     }
 }

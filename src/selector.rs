@@ -2,6 +2,10 @@ use dialoguer::{theme::ColorfulTheme, Error, FuzzySelect};
 
 use crate::bookmark::Bookmark;
 
+#[cfg(test)]
+use mockall::automock;
+
+#[cfg_attr(test, automock)]
 pub trait IBookmarkSelector {
     fn select(&self, items: &[Bookmark], prompt: String) -> Result<Option<Bookmark>, Error>;
 }

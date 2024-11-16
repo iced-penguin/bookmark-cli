@@ -214,4 +214,29 @@ mod tests {
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), None);
     }
+
+    #[test]
+    // 全てのブックマークが取得されること
+    fn test_list_bookmarks() {
+        let bookmarks = vec![
+            Bookmark::new("/path/to/dir1"),
+            Bookmark::new("/path/to/dir2"),
+        ];
+
+        let mut repo = MockBookmarkRepository::new(&bookmarks);
+
+        let result = list_bookmarks(&mut repo);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), bookmarks);
+    }
+
+    #[test]
+    // ブックマークがない場合は空のベクタが取得されること
+    fn test_list_bookmarks_empty() {
+        let mut repo = MockBookmarkRepository::new(&[]);
+
+        let result = list_bookmarks(&mut repo);
+        assert!(result.is_ok());
+        assert!(result.unwrap().is_empty());
+    }
 }

@@ -1,7 +1,7 @@
 mod bookmark;
 mod dao;
-mod interaction;
 mod repository;
+mod selector;
 mod usecase;
 
 use clap::{Parser, Subcommand};

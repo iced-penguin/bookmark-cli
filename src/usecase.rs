@@ -3,8 +3,8 @@ use std::path::PathBuf;
 use console::Emoji;
 
 use crate::bookmark::Bookmark;
-use crate::interaction::{BookmarkSelector, IBookmarkSelector};
 use crate::repository::IBookmarkRepository;
+use crate::selector::{BookmarkSelector, IBookmarkSelector};
 
 pub fn add_bookmark(
     bookmark_repo: &mut dyn IBookmarkRepository,

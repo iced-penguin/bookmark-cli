@@ -1,5 +1,9 @@
 use std::{io::Error, path::PathBuf};
 
+#[cfg(test)]
+use mockall::automock;
+
+#[cfg_attr(test, automock)]
 pub trait PathOps {
     fn exists(&self, path: &str) -> bool;
     fn is_dir(&self, path: &str) -> bool;

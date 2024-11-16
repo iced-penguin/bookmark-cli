@@ -85,3 +85,78 @@ fn select_bookmark(
     let prompt = format!("{} Select a bookmark (type to filter): ", Emoji("🔖", ""));
     selector.select(bookmarks, prompt)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::path::MockPathOps;
+    use crate::repository::MockBookmarkRepository;
+    use rstest::rstest;
+
+    #[test]
+    // ブックマークが登録されること
+    fn test_add_bookmark() {
+        let path = Some("/path/to/dir".to_string());
+
+        let mut repo = MockBookmarkRepository::new(&[]);
+        let mut path_ops = MockPathOps::new();
+        path_ops.expect_exists().returning(|_| true);
+        path_ops.expect_is_dir().returning(|_| true);
+
+        let result = add_bookmark(&mut repo, &path_ops, path);
+        assert!(result.is_ok());
+        assert_eq!(
+            repo.find_all().unwrap(),
+            vec![Bookmark::new("/path/to/dir")]
+        );
+    }
+
+    #[rstest]
+    // パスが空文字列の場合、カレントディレクトリが登録されること
+    #[case(Some("".to_string()), "/current/dir")]
+    // パスがNoneの場合、カレントディレクトリが登録されること
+    #[case(None, "/current/dir")]
+    fn test_add_bookmark_with_empty_or_none_path(
+        #[case] path: Option<String>,
+        #[case] expected_path: &str,
+    ) {
+        let mut repo = MockBookmarkRepository::new(&[]);
+        let mut path_ops = MockPathOps::new();
+        path_ops
+            .expect_get_current_dir()
+            .returning(|| Ok("/current/dir".to_string()));
+        path_ops.expect_exists().returning(|_| true);
+        path_ops.expect_is_dir().returning(|_| true);
+
+        let result = add_bookmark(&mut repo, &path_ops, path);
+        assert!(result.is_ok());
+        assert_eq!(repo.find_all().unwrap(), vec![Bookmark::new(expected_path)]);
+    }
+
+    #[test]
+    // パスが存在しない場合、エラーが返ること
+    fn test_add_bookmark_with_nonexistent_path() {
+        let path = Some("/nonexistent/path".to_string());
+
+        let mut repo = MockBookmarkRepository::new(&[]);
+        let mut path_ops = MockPathOps::new();
+        path_ops.expect_exists().returning(|_| false);
+
+        let result = add_bookmark(&mut repo, &path_ops, path);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    // パスがディレクトリでない場合、エラーが返ること
+    fn test_add_bookmark_with_non_dir_path() {
+        let path = Some("/file".to_string());
+
+        let mut repo = MockBookmarkRepository::new(&[]);
+        let mut path_ops = MockPathOps::new();
+        path_ops.expect_exists().returning(|_| true);
+        path_ops.expect_is_dir().returning(|_| false);
+
+        let result = add_bookmark(&mut repo, &path_ops, path);
+        assert!(result.is_err());
+    }
+}

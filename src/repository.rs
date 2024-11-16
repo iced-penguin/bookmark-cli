@@ -35,6 +35,37 @@ impl<B: IBookmarkDao> IBookmarkRepository for BookmarkRepository<B> {
     }
 }
 
+pub struct MockBookmarkRepository {
+    bookmarks: Vec<Bookmark>,
+}
+
+#[cfg(test)]
+impl MockBookmarkRepository {
+    pub fn new(bookmarks: &[Bookmark]) -> Self {
+        Self {
+            bookmarks: bookmarks.to_vec(),
+        }
+    }
+}
+
+impl IBookmarkRepository for MockBookmarkRepository {
+    fn save(&mut self, bookmark: &Bookmark) -> Result<(), Error> {
+        if !self.bookmarks.contains(bookmark) {
+            self.bookmarks.push(bookmark.clone());
+        }
+        Ok(())
+    }
+
+    fn delete(&mut self, bookmark: &Bookmark) -> Result<(), Error> {
+        self.bookmarks.retain(|b| b != bookmark);
+        Ok(())
+    }
+
+    fn find_all(&mut self) -> Result<Vec<Bookmark>, Error> {
+        Ok(self.bookmarks.clone())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use std::vec;

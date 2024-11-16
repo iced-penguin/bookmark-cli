@@ -63,9 +63,32 @@ fn main() {
     let result: Result<(), Box<dyn std::error::Error>> = match cli.command {
         Some(Commands::Add { path }) => add_bookmark(&mut bookmark_repo, &path_ops, path),
         Some(Commands::Delete) => delete_bookmark(&mut bookmark_repo),
-        Some(Commands::Search) => search_bookmark(&mut bookmark_repo),
-        Some(Commands::List) => list_bookmarks(&mut bookmark_repo),
-        Some(Commands::Prune) => prune_bookmarks(&mut bookmark_repo),
+        Some(Commands::Search) => match search_bookmark(&mut bookmark_repo) {
+            Ok(Some(bookmark)) => {
+                println!("{}", bookmark);
+                Ok(())
+            }
+            Ok(None) => Ok(()),
+            Err(e) => Err(e),
+        },
+        Some(Commands::List) => match list_bookmarks(&mut bookmark_repo) {
+            Ok(bookmarks) => {
+                for bookmark in bookmarks {
+                    println!("{}", bookmark);
+                }
+                Ok(())
+            }
+            Err(e) => Err(e),
+        },
+        Some(Commands::Prune) => match prune_bookmarks(&mut bookmark_repo) {
+            Ok(deleted_bookmarks) => {
+                for bookmark in deleted_bookmarks {
+                    println!("deleted: {}", bookmark);
+                }
+                Ok(())
+            }
+            Err(e) => Err(e),
+        },
         None => Ok(()),
     };
 

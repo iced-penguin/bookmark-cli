@@ -44,38 +44,34 @@ pub fn delete_bookmark(
 
 pub fn search_bookmark(
     bookmark_repo: &mut dyn IBookmarkRepository,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<Option<Bookmark>, Box<dyn std::error::Error>> {
     let bookmarks = bookmark_repo.find_all()?;
     let selector = BookmarkSelector::new();
-    if let Some(bookmark) = select_bookmark(&selector, &bookmarks)? {
-        println!("{}", bookmark);
-    }
-    Ok(())
+    let bookmark = select_bookmark(&selector, &bookmarks)?;
+    Ok(bookmark)
 }
 
 pub fn list_bookmarks(
     bookmark_repo: &mut dyn IBookmarkRepository,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<Vec<Bookmark>, Box<dyn std::error::Error>> {
     let bookmarks = bookmark_repo.find_all()?;
-    for bookmark in bookmarks {
-        println!("{}", bookmark);
-    }
-    Ok(())
+    Ok(bookmarks)
 }
 
 pub fn prune_bookmarks(
     bookmark_repo: &mut dyn IBookmarkRepository,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<Vec<Bookmark>, Box<dyn std::error::Error>> {
     let bookmarks = bookmark_repo.find_all()?;
+    let mut deleted_bookmarks = Vec::new();
 
     for bookmark in bookmarks {
         let is_broken = bookmark.is_broken()?;
         if is_broken {
             bookmark_repo.delete(&bookmark)?;
-            println!("deleted: {}", bookmark)
+            deleted_bookmarks.push(bookmark);
         }
     }
-    Ok(())
+    Ok(deleted_bookmarks)
 }
 
 fn select_bookmark(

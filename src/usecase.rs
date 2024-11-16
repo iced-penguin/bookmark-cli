@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use console::Emoji;
 
 use crate::bookmark::Bookmark;
-use crate::interaction::{BookmarkSelector, FuzzySelector};
+use crate::interaction::{BookmarkSelector, IBookmarkSelector};
 use crate::repository::IBookmarkRepository;
 
 pub fn add_bookmark(
@@ -31,7 +31,8 @@ pub fn delete_bookmark(
     bookmark_repo: &mut dyn IBookmarkRepository,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let bookmarks = bookmark_repo.find_all()?;
-    if let Some(bookmark) = select_bookmark(&bookmarks)? {
+    let selector = BookmarkSelector::new();
+    if let Some(bookmark) = select_bookmark(&selector, &bookmarks)? {
         bookmark_repo.delete(&bookmark)?;
     }
     Ok(())
@@ -41,7 +42,8 @@ pub fn search_bookmark(
     bookmark_repo: &mut dyn IBookmarkRepository,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let bookmarks = bookmark_repo.find_all()?;
-    if let Some(bookmark) = select_bookmark(&bookmarks)? {
+    let selector = BookmarkSelector::new();
+    if let Some(bookmark) = select_bookmark(&selector, &bookmarks)? {
         println!("{}", bookmark);
     }
     Ok(())
@@ -72,8 +74,10 @@ pub fn prune_bookmarks(
     Ok(())
 }
 
-fn select_bookmark(bookmarks: &Vec<Bookmark>) -> Result<Option<Bookmark>, dialoguer::Error> {
+fn select_bookmark(
+    selector: &dyn IBookmarkSelector,
+    bookmarks: &Vec<Bookmark>,
+) -> Result<Option<Bookmark>, dialoguer::Error> {
     let prompt = format!("{} Select a bookmark (type to filter): ", Emoji("🔖", ""));
-    let bookmark_selector = BookmarkSelector::new(FuzzySelector::new(prompt));
-    bookmark_selector.select(&bookmarks)
+    selector.select(bookmarks, prompt)
 }

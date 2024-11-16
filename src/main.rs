@@ -1,11 +1,13 @@
 mod bookmark;
 mod dao;
+mod path;
 mod repository;
 mod selector;
 mod usecase;
 
 use clap::{Parser, Subcommand};
 use dao::BookmarkDao;
+use path::DefaultPathOps;
 use repository::BookmarkRepository;
 use std::fs::File;
 use std::path::PathBuf;
@@ -56,14 +58,10 @@ fn main() {
     let dao = BookmarkDao::new(src);
     let mut bookmark_repo = BookmarkRepository::new(dao);
 
+    let path_ops = DefaultPathOps::new();
+
     let result: Result<(), Box<dyn std::error::Error>> = match cli.command {
-        Some(Commands::Add { path }) => {
-            let path = match path {
-                Some(path) => path,
-                None => get_current_dir(),
-            };
-            add_bookmark(&mut bookmark_repo, path)
-        }
+        Some(Commands::Add { path }) => add_bookmark(&mut bookmark_repo, &path_ops, path),
         Some(Commands::Delete) => delete_bookmark(&mut bookmark_repo),
         Some(Commands::Search) => search_bookmark(&mut bookmark_repo),
         Some(Commands::List) => list_bookmarks(&mut bookmark_repo),
@@ -75,14 +73,4 @@ fn main() {
         eprintln!("{}", e);
         std::process::exit(1);
     }
-}
-
-fn get_current_dir() -> String {
-    std::env::current_dir()
-        .unwrap_or_else(|_| {
-            eprintln!("failed to get current directory");
-            std::process::exit(1);
-        })
-        .to_string_lossy()
-        .into_owned()
 }

@@ -1,25 +1,29 @@
-use std::path::PathBuf;
-
 use console::Emoji;
 
 use crate::bookmark::Bookmark;
+use crate::path::PathOps;
 use crate::repository::IBookmarkRepository;
 use crate::selector::{BookmarkSelector, IBookmarkSelector};
 
 pub fn add_bookmark(
     bookmark_repo: &mut dyn IBookmarkRepository,
-    path: String,
+    path_ops: &dyn PathOps,
+    path: Option<String>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    if path.is_empty() {
-        return Err("Path cannot be empty".into());
-    }
-
-    let path_buf = PathBuf::from(&path);
-    if !path_buf.exists() {
+    let path = match path {
+        Some(p) => {
+            if p.is_empty() {
+                path_ops.get_current_dir()?
+            } else {
+                p
+            }
+        }
+        None => path_ops.get_current_dir()?,
+    };
+    if !path_ops.exists(&path) {
         return Err(format!("Path does not exist: {}", path).into());
     }
-
-    if !path_buf.is_dir() {
+    if !path_ops.is_dir(&path) {
         return Err(format!("Path is not a directory: {}", path).into());
     }
 

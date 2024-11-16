@@ -6,19 +6,19 @@ use crate::bookmark::Bookmark;
 use mockall::automock;
 
 #[cfg_attr(test, automock)]
-pub trait IBookmarkSelector {
+pub trait BookmarkSelector {
     fn select(&self, items: &[Bookmark], prompt: String) -> Result<Option<Bookmark>, Error>;
 }
 
-pub struct BookmarkSelector {}
+pub struct FuzzyBookmarkSelector {}
 
-impl BookmarkSelector {
+impl FuzzyBookmarkSelector {
     pub fn new() -> Self {
         Self {}
     }
 }
 
-impl IBookmarkSelector for BookmarkSelector {
+impl BookmarkSelector for FuzzyBookmarkSelector {
     fn select(&self, items: &[Bookmark], prompt: String) -> Result<Option<Bookmark>, Error> {
         if items.is_empty() {
             return Ok(None);

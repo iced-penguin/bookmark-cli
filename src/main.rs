@@ -9,6 +9,7 @@ use clap::{Parser, Subcommand};
 use dao::BookmarkDao;
 use path::DefaultPathOps;
 use repository::BookmarkRepository;
+use selector::FuzzyBookmarkSelector;
 use std::fs::File;
 use std::path::PathBuf;
 use usecase::{add_bookmark, delete_bookmark, list_bookmarks, prune_bookmarks, search_bookmark};
@@ -59,7 +60,7 @@ fn main() {
     let mut bookmark_repo = BookmarkRepository::new(dao);
 
     let path_ops = DefaultPathOps::new();
-    let selector = selector::BookmarkSelector::new();
+    let selector = FuzzyBookmarkSelector::new();
 
     let result: Result<(), Box<dyn std::error::Error>> = match cli.command {
         Some(Commands::Add { path }) => add_bookmark(&mut bookmark_repo, &path_ops, path),

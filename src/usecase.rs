@@ -3,7 +3,7 @@ use console::Emoji;
 use crate::bookmark::Bookmark;
 use crate::path::PathOps;
 use crate::repository::IBookmarkRepository;
-use crate::selector::IBookmarkSelector;
+use crate::selector::BookmarkSelector;
 
 pub fn add_bookmark(
     bookmark_repo: &mut dyn IBookmarkRepository,
@@ -33,7 +33,7 @@ pub fn add_bookmark(
 
 pub fn delete_bookmark(
     bookmark_repo: &mut dyn IBookmarkRepository,
-    selector: &dyn IBookmarkSelector,
+    selector: &dyn BookmarkSelector,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let bookmarks = bookmark_repo.find_all()?;
     if let Some(bookmark) = select_bookmark(selector, &bookmarks)? {
@@ -44,7 +44,7 @@ pub fn delete_bookmark(
 
 pub fn search_bookmark(
     bookmark_repo: &mut dyn IBookmarkRepository,
-    selector: &dyn IBookmarkSelector,
+    selector: &dyn BookmarkSelector,
 ) -> Result<Option<Bookmark>, Box<dyn std::error::Error>> {
     let bookmarks = bookmark_repo.find_all()?;
     let bookmark = select_bookmark(selector, &bookmarks)?;
@@ -75,7 +75,7 @@ pub fn prune_bookmarks(
 }
 
 fn select_bookmark(
-    selector: &dyn IBookmarkSelector,
+    selector: &dyn BookmarkSelector,
     bookmarks: &Vec<Bookmark>,
 ) -> Result<Option<Bookmark>, dialoguer::Error> {
     let prompt = format!("{} Select a bookmark (type to filter): ", Emoji("🔖", ""));
@@ -87,7 +87,7 @@ mod tests {
     use super::*;
     use crate::path::MockPathOps;
     use crate::repository::MockBookmarkRepository;
-    use crate::selector::MockIBookmarkSelector;
+    use crate::selector::MockBookmarkSelector;
     use rstest::rstest;
 
     #[test]
@@ -163,7 +163,7 @@ mod tests {
         let bookmark = Bookmark::new("/path/to/dir");
 
         let mut repo = MockBookmarkRepository::new(&[bookmark.clone()]);
-        let mut selector = MockIBookmarkSelector::new();
+        let mut selector = MockBookmarkSelector::new();
         selector
             .expect_select()
             .returning(|_, _| Ok(Some(Bookmark::new("/path/to/dir"))));
@@ -179,7 +179,7 @@ mod tests {
         let bookmark = Bookmark::new("/path/to/dir");
 
         let mut repo = MockBookmarkRepository::new(&[bookmark.clone()]);
-        let mut selector = MockIBookmarkSelector::new();
+        let mut selector = MockBookmarkSelector::new();
         selector.expect_select().returning(|_, _| Ok(None));
 
         let result = delete_bookmark(&mut repo, &selector);

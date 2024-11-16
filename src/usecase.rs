@@ -186,4 +186,32 @@ mod tests {
         assert!(result.is_ok());
         assert_eq!(repo.find_all().unwrap(), vec![bookmark]);
     }
+
+    #[test]
+    // 正常にブックマークが取得できること
+    fn test_search_bookmark() {
+        let bookmarks = vec![Bookmark::new("/path/to/dir")];
+
+        let mut repo = MockBookmarkRepository::new(&bookmarks);
+        let mut selector = MockBookmarkSelector::new();
+        selector
+            .expect_select()
+            .returning(|_, _| Ok(Some(Bookmark::new("/path/to/dir"))));
+
+        let result = search_bookmark(&mut repo, &selector);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), Some(Bookmark::new("/path/to/dir")));
+    }
+
+    #[test]
+    // ブックマークが１件もない場合はNoneを返すこと
+    fn test_search_bookmark_no_bookmarks() {
+        let mut repo = MockBookmarkRepository::new(&[]);
+        let mut selector = MockBookmarkSelector::new();
+        selector.expect_select().returning(|_, _| Ok(None));
+
+        let result = search_bookmark(&mut repo, &selector);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), None);
+    }
 }

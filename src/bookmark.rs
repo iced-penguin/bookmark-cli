@@ -47,7 +47,8 @@ mod tests {
     #[test]
     fn test_parse() {
         let path = "path/to/sample".to_string();
-        let bookmark = Bookmark::parse(path.clone());
-        assert_eq!(bookmark.path, path);
+        let actual_bookmark = Bookmark::parse(path.clone());
+        let expected_bookmark = Bookmark::new(&path);
+        assert_eq!(actual_bookmark, expected_bookmark);
     }
 }

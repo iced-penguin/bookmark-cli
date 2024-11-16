@@ -3,7 +3,7 @@ use console::Emoji;
 use crate::bookmark::Bookmark;
 use crate::path::PathOps;
 use crate::repository::IBookmarkRepository;
-use crate::selector::{BookmarkSelector, IBookmarkSelector};
+use crate::selector::IBookmarkSelector;
 
 pub fn add_bookmark(
     bookmark_repo: &mut dyn IBookmarkRepository,
@@ -33,10 +33,10 @@ pub fn add_bookmark(
 
 pub fn delete_bookmark(
     bookmark_repo: &mut dyn IBookmarkRepository,
+    selector: &dyn IBookmarkSelector,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let bookmarks = bookmark_repo.find_all()?;
-    let selector = BookmarkSelector::new();
-    if let Some(bookmark) = select_bookmark(&selector, &bookmarks)? {
+    if let Some(bookmark) = select_bookmark(selector, &bookmarks)? {
         bookmark_repo.delete(&bookmark)?;
     }
     Ok(())
@@ -44,10 +44,10 @@ pub fn delete_bookmark(
 
 pub fn search_bookmark(
     bookmark_repo: &mut dyn IBookmarkRepository,
+    selector: &dyn IBookmarkSelector,
 ) -> Result<Option<Bookmark>, Box<dyn std::error::Error>> {
     let bookmarks = bookmark_repo.find_all()?;
-    let selector = BookmarkSelector::new();
-    let bookmark = select_bookmark(&selector, &bookmarks)?;
+    let bookmark = select_bookmark(selector, &bookmarks)?;
     Ok(bookmark)
 }
 

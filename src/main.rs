@@ -59,11 +59,12 @@ fn main() {
     let mut bookmark_repo = BookmarkRepository::new(dao);
 
     let path_ops = DefaultPathOps::new();
+    let selector = selector::BookmarkSelector::new();
 
     let result: Result<(), Box<dyn std::error::Error>> = match cli.command {
         Some(Commands::Add { path }) => add_bookmark(&mut bookmark_repo, &path_ops, path),
-        Some(Commands::Delete) => delete_bookmark(&mut bookmark_repo),
-        Some(Commands::Search) => match search_bookmark(&mut bookmark_repo) {
+        Some(Commands::Delete) => delete_bookmark(&mut bookmark_repo, &selector),
+        Some(Commands::Search) => match search_bookmark(&mut bookmark_repo, &selector) {
             Ok(Some(bookmark)) => {
                 println!("{}", bookmark);
                 Ok(())

@@ -35,12 +35,14 @@ cargo install bookmark-cli
 ### Adding a Bookmark
 
 ```
-bm add [bookmark path]
+bm add [bookmark path] [--tags tag1,tag2,...]
 ```
 
 The bookmark path must be an absolute path.
 
 If you do not specify `[bookmark path]`, the current directory will be registered as a bookmark.
+
+You can also add tags to the bookmark using the `--tags` option. Tags should be comma-separated.
 
 ### Searching for a Bookmark
 

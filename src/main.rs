@@ -29,6 +29,9 @@ enum Commands {
         /// The bookmark to add (the absolute path of a directory).
         /// If not specified, the current directory will be registered.
         path: Option<String>,
+        /// Tags for the bookmark
+        #[arg(short, long, value_delimiter = ',', num_args = 0..)]
+        tags: Option<Vec<String>>,
     },
     /// Delete a bookmark
     Delete,
@@ -63,11 +66,17 @@ fn main() {
     let selector = FuzzyBookmarkSelector::new();
 
     let result: Result<(), Box<dyn std::error::Error>> = match cli.command {
-        Some(Commands::Add { path }) => add_bookmark(&mut bookmark_repo, &path_ops, path),
+        Some(Commands::Add { path, tags }) => {
+            let tags = match tags {
+                Some(t) => t,
+                None => vec![],
+            };
+            add_bookmark(&mut bookmark_repo, &path_ops, path, tags)
+        }
         Some(Commands::Delete) => delete_bookmark(&mut bookmark_repo, &selector),
         Some(Commands::Search) => match search_bookmark(&mut bookmark_repo, &selector) {
             Ok(Some(bookmark)) => {
-                println!("{}", bookmark);
+                println!("{}", bookmark.get_path());
                 Ok(())
             }
             Ok(None) => Ok(()),

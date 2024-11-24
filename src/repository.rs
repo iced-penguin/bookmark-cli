@@ -6,7 +6,7 @@ pub trait IBookmarkRepository {
     /// ブックマークを保存する
     fn save(&mut self, bookmark: &Bookmark) -> Result<(), Error>;
     /// ブックマークを削除する
-    fn delete(&mut self, bookmark: &Bookmark) -> Result<(), Error>;
+    fn delete(&mut self, path: &str) -> Result<(), Error>;
     /// 全てのブックマークを取得する
     fn find_all(&mut self) -> Result<Vec<Bookmark>, Error>;
 }
@@ -26,8 +26,8 @@ impl<B: IBookmarkDao> IBookmarkRepository for BookmarkRepository<B> {
         self.dao.save(bookmark)
     }
 
-    fn delete(&mut self, bookmark: &Bookmark) -> Result<(), Error> {
-        self.dao.delete(bookmark)
+    fn delete(&mut self, path: &str) -> Result<(), Error> {
+        self.dao.delete(path)
     }
 
     fn find_all(&mut self) -> Result<Vec<Bookmark>, Error> {
@@ -56,8 +56,8 @@ impl IBookmarkRepository for MockBookmarkRepository {
         Ok(())
     }
 
-    fn delete(&mut self, bookmark: &Bookmark) -> Result<(), Error> {
-        self.bookmarks.retain(|b| b != bookmark);
+    fn delete(&mut self, path: &str) -> Result<(), Error> {
+        self.bookmarks.retain(|b| b.get_path() != path);
         Ok(())
     }
 
@@ -84,10 +84,15 @@ mod tests {
         #[case] new_path: &str,
         #[case] expected_paths: Vec<&str>,
     ) {
-        let init_bookmarks: Vec<Bookmark> = init_paths.iter().map(|p| Bookmark::new(p)).collect();
-        let new_bookmark = Bookmark::new(new_path);
-        let expected_bookmarks: Vec<Bookmark> =
-            expected_paths.iter().map(|p| Bookmark::new(p)).collect();
+        let init_bookmarks: Vec<Bookmark> = init_paths
+            .iter()
+            .map(|p| Bookmark::new(p, vec![]))
+            .collect();
+        let new_bookmark = Bookmark::new(new_path, vec![]);
+        let expected_bookmarks: Vec<Bookmark> = expected_paths
+            .iter()
+            .map(|p| Bookmark::new(p, vec![]))
+            .collect();
 
         let dao = MockBookmarkDao::new(&init_bookmarks);
         let mut repo = BookmarkRepository::new(dao);
@@ -107,15 +112,19 @@ mod tests {
         #[case] path_to_delete: &str,
         #[case] expected_paths: Vec<&str>,
     ) {
-        let init_bookmarks: Vec<Bookmark> = init_paths.iter().map(|p| Bookmark::new(p)).collect();
-        let bookmark_to_delete = Bookmark::new(path_to_delete);
-        let expected_bookmarks: Vec<Bookmark> =
-            expected_paths.iter().map(|p| Bookmark::new(p)).collect();
+        let init_bookmarks: Vec<Bookmark> = init_paths
+            .iter()
+            .map(|p| Bookmark::new(p, vec![]))
+            .collect();
+        let expected_bookmarks: Vec<Bookmark> = expected_paths
+            .iter()
+            .map(|p| Bookmark::new(p, vec![]))
+            .collect();
 
         let dao = MockBookmarkDao::new(&init_bookmarks);
         let mut repo = BookmarkRepository::new(dao);
 
-        repo.delete(&bookmark_to_delete).unwrap();
+        repo.delete(path_to_delete).unwrap();
         let actual_bookmarks = repo.find_all().unwrap();
         assert_eq!(actual_bookmarks, expected_bookmarks);
     }
@@ -124,9 +133,14 @@ mod tests {
     // 全てのブックマークが取得されること
     #[case(vec!["path1", "path2"], vec!["path1", "path2"])]
     fn test_find_all_bookmarks(#[case] init_paths: Vec<&str>, #[case] expected_paths: Vec<&str>) {
-        let init_bookmarks: Vec<Bookmark> = init_paths.iter().map(|p| Bookmark::new(p)).collect();
-        let expected_bookmarks: Vec<Bookmark> =
-            expected_paths.iter().map(|p| Bookmark::new(p)).collect();
+        let init_bookmarks: Vec<Bookmark> = init_paths
+            .iter()
+            .map(|p| Bookmark::new(p, vec![]))
+            .collect();
+        let expected_bookmarks: Vec<Bookmark> = expected_paths
+            .iter()
+            .map(|p| Bookmark::new(p, vec![]))
+            .collect();
 
         let dao = MockBookmarkDao::new(&init_bookmarks);
         let mut repo = BookmarkRepository::new(dao);

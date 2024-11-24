@@ -9,6 +9,7 @@ pub fn add_bookmark(
     bookmark_repo: &mut dyn IBookmarkRepository,
     path_ops: &dyn PathOps,
     path: Option<String>,
+    tags: Vec<String>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let path = match path {
         Some(p) => {
@@ -27,7 +28,7 @@ pub fn add_bookmark(
         return Err(format!("Path is not a directory: {}", path).into());
     }
 
-    let bookmark = Bookmark::new(&path);
+    let bookmark = Bookmark::new(&path, tags); // Pass tags to Bookmark
     Ok(bookmark_repo.save(&bookmark)?)
 }
 
@@ -37,7 +38,7 @@ pub fn delete_bookmark(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let bookmarks = bookmark_repo.find_all()?;
     if let Some(bookmark) = select_bookmark(selector, &bookmarks)? {
-        bookmark_repo.delete(&bookmark)?;
+        bookmark_repo.delete(&bookmark.get_path())?;
     }
     Ok(())
 }
@@ -67,7 +68,7 @@ pub fn prune_bookmarks(
     for bookmark in bookmarks {
         let is_broken = bookmark.is_broken()?;
         if is_broken {
-            bookmark_repo.delete(&bookmark)?;
+            bookmark_repo.delete(&bookmark.get_path())?;
             deleted_bookmarks.push(bookmark);
         }
     }
@@ -94,17 +95,18 @@ mod tests {
     // ブックマークが登録されること
     fn test_add_bookmark() {
         let path = Some("/path/to/dir".to_string());
+        let tags = vec!["tag1".to_string(), "tag2".to_string()]; // Add tags
 
         let mut repo = MockBookmarkRepository::new(&[]);
         let mut path_ops = MockPathOps::new();
         path_ops.expect_exists().returning(|_| true);
         path_ops.expect_is_dir().returning(|_| true);
 
-        let result = add_bookmark(&mut repo, &path_ops, path);
+        let result = add_bookmark(&mut repo, &path_ops, path, tags.clone()); // Pass tags
         assert!(result.is_ok());
         assert_eq!(
             repo.find_all().unwrap(),
-            vec![Bookmark::new("/path/to/dir")]
+            vec![Bookmark::new("/path/to/dir", tags)] // Check tags
         );
     }
 
@@ -117,6 +119,7 @@ mod tests {
         #[case] path: Option<String>,
         #[case] expected_path: &str,
     ) {
+        let tags = vec!["tag1".to_string(), "tag2".to_string()]; // Add tags
         let mut repo = MockBookmarkRepository::new(&[]);
         let mut path_ops = MockPathOps::new();
         path_ops
@@ -125,9 +128,12 @@ mod tests {
         path_ops.expect_exists().returning(|_| true);
         path_ops.expect_is_dir().returning(|_| true);
 
-        let result = add_bookmark(&mut repo, &path_ops, path);
+        let result = add_bookmark(&mut repo, &path_ops, path, tags.clone()); // Pass tags
         assert!(result.is_ok());
-        assert_eq!(repo.find_all().unwrap(), vec![Bookmark::new(expected_path)]);
+        assert_eq!(
+            repo.find_all().unwrap(),
+            vec![Bookmark::new(expected_path, tags)] // Check tags
+        );
     }
 
     #[test]
@@ -139,7 +145,7 @@ mod tests {
         let mut path_ops = MockPathOps::new();
         path_ops.expect_exists().returning(|_| false);
 
-        let result = add_bookmark(&mut repo, &path_ops, path);
+        let result = add_bookmark(&mut repo, &path_ops, path, vec![]); // Pass empty tags
         assert!(result.is_err());
     }
 
@@ -153,20 +159,20 @@ mod tests {
         path_ops.expect_exists().returning(|_| true);
         path_ops.expect_is_dir().returning(|_| false);
 
-        let result = add_bookmark(&mut repo, &path_ops, path);
+        let result = add_bookmark(&mut repo, &path_ops, path, vec![]); // Pass empty tags
         assert!(result.is_err());
     }
 
     #[test]
     // 正常にブックマークが削除されること
     fn test_delete_bookmark() {
-        let bookmark = Bookmark::new("/path/to/dir");
+        let bookmark = Bookmark::new("/path/to/dir", vec![]);
 
         let mut repo = MockBookmarkRepository::new(&[bookmark.clone()]);
         let mut selector = MockBookmarkSelector::new();
         selector
             .expect_select()
-            .returning(|_, _| Ok(Some(Bookmark::new("/path/to/dir"))));
+            .returning(|_, _| Ok(Some(Bookmark::new("/path/to/dir", vec![]))));
 
         let result = delete_bookmark(&mut repo, &selector);
         assert!(result.is_ok());
@@ -176,7 +182,7 @@ mod tests {
     #[test]
     // 該当するブックマークが存在しない場合は何もせずに正常終了
     fn test_delete_bookmark_no_match() {
-        let bookmark = Bookmark::new("/path/to/dir");
+        let bookmark = Bookmark::new("/path/to/dir", vec![]);
 
         let mut repo = MockBookmarkRepository::new(&[bookmark.clone()]);
         let mut selector = MockBookmarkSelector::new();
@@ -190,17 +196,17 @@ mod tests {
     #[test]
     // 正常にブックマークが取得できること
     fn test_search_bookmark() {
-        let bookmarks = vec![Bookmark::new("/path/to/dir")];
+        let bookmarks = vec![Bookmark::new("/path/to/dir", vec![])];
 
         let mut repo = MockBookmarkRepository::new(&bookmarks);
         let mut selector = MockBookmarkSelector::new();
         selector
             .expect_select()
-            .returning(|_, _| Ok(Some(Bookmark::new("/path/to/dir"))));
+            .returning(|_, _| Ok(Some(Bookmark::new("/path/to/dir", vec![]))));
 
         let result = search_bookmark(&mut repo, &selector);
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), Some(Bookmark::new("/path/to/dir")));
+        assert_eq!(result.unwrap(), Some(Bookmark::new("/path/to/dir", vec![])));
     }
 
     #[test]
@@ -219,8 +225,8 @@ mod tests {
     // 全てのブックマークが取得されること
     fn test_list_bookmarks() {
         let bookmarks = vec![
-            Bookmark::new("/path/to/dir1"),
-            Bookmark::new("/path/to/dir2"),
+            Bookmark::new("/path/to/dir1", vec![]),
+            Bookmark::new("/path/to/dir2", vec![]),
         ];
 
         let mut repo = MockBookmarkRepository::new(&bookmarks);
